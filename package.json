@@ -1,0 +1,18 @@
+{
+  "name": "dsh-prd-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A focused PRD generation, review, and revision agent preset for DeepSeek Harness.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "test": "npm run validate && node --test tests/install.test.mjs && node scripts/smoke-dsh.mjs",
+    "smoke:dsh": "node scripts/smoke-dsh.mjs",
+    "install:dsh": "node scripts/install.mjs",
+    "install:dsh:dry-run": "node scripts/install.mjs --dry-run"
+  },
+  "license": "MIT"
+}
