@@ -1,56 +1,45 @@
-# DSH PRD Agent
+# DSH Extension Kit
 
-基于官方 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Agent Preset 和 Skill 机制实现的单 Agent PRD 生成器。
+面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的可扩展制品仓库，
+统一管理 Agent Preset、Skill、Plugin、Workflow 和 Bundle。
 
-V0.1 提供：
-
-- 自然语言产品想法 → 精简 MVP PRD
-- 需求完整性判断和关键问题澄清
-- 功能模块、子功能、业务规则、异常场景和验收标准生成
-- PRD Review
-- 根据自然语言反馈修订完整 PRD
-- 按用户明确要求创建或原地更新 Markdown 文件
-
-不包含自定义 Tool、HTTP API、数据库、独立前端、多 Agent 或联网检索。
+当前可用制品是 **PRD Agent 0.1.0**：把自然语言产品想法转成精简 MVP PRD，支持
+需求澄清、PRD Review、根据反馈修订，以及在用户明确要求时创建或更新 Markdown 文件。
 
 ## 运行要求
 
 - Node.js 22.19+、24 或 26
 - 官方 DeepSeek Harness Web Profile
-- 使用真实模型时需要可用的 DeepSeek 模型配置；通常通过 `DEEPSEEK_API_KEY` 或 DSH Web 的 Models 设置提供
+- 使用真实模型时需要可用的 DeepSeek 模型配置
 
-DSH 仍处于开发预览阶段并可能发生不兼容变更。本项目以 2026-08 的官方 Agent Preset、`dsh-skill-filesystem` 和 `dsh-tool-skill` 接口为兼容基线。
+DSH 仍处于开发预览阶段。本仓库当前以 `2026-08` 接口为兼容基线，记录在
+[`dsh-kit.json`](dsh-kit.json) 中。
 
-## 安装
-
-先验证将要安装的内容：
+## 快速开始
 
 ```sh
 npm run validate
 npm run install:dsh:dry-run
-```
-
-安装到默认的 `${DSH_HOME:-~/.dsh}/.agent-presets/prd-agent`：
-
-```sh
 npm run install:dsh
 ```
 
-使用自定义 DSH Home：
+显式指定制品或自定义 DSH Home：
 
 ```sh
-npm run install:dsh -- --dsh-home /absolute/path/to/dsh-home
+npm run install:dsh:dry-run -- prd-agent
+npm run install:dsh -- prd-agent
+npm run install:dsh -- prd-agent --dsh-home /absolute/path/to/dsh-home
 ```
 
-如果目标目录内容与当前版本一致，安装器不做任何修改。目标存在不同内容时会默认拒绝覆盖。确认更新时使用：
+目标内容相同时安装器保持幂等。目标存在不同内容时默认拒绝覆盖；确认更新可使用：
 
 ```sh
-npm run install:dsh -- --force
+npm run install:dsh -- prd-agent --force
 ```
 
-`--force` 会先把旧目录重命名为同级的 `prd-agent.backup-<时间戳>`，再发布新版本；安装器不会自动删除备份。
+`--force` 会先将旧目录重命名为带时间戳的同级备份，再发布新版本，不自动删除备份。
 
-## 启动和选择 Agent
+## 使用 PRD Agent
 
 启动 DSH Web：
 
@@ -58,76 +47,53 @@ npm run install:dsh -- --force
 npx @deepseek-ai/dsh web
 ```
 
-打开 Web UI，新建空白会话，并在 Agent Preset 列表中选择 **PRD Agent**。如果 Web 已经打开，刷新预设列表或新建会话；已经产生消息的会话不能中途切换预设。
+新建空白会话并选择 **PRD Agent**。启动 DSH 时所在目录就是 Agent 工作区，默认文档路径
+`docs/prd/<产品名-slug>.md` 相对于该目录解析。
 
-启动 DSH 时所在目录就是 PRD Agent 的工作区。默认文件路径 `docs/prd/<产品名-slug>.md` 相对于该目录解析。
-
-## 使用示例
-
-### 从想法生成 PRD
+生成并保存示例：
 
 ```text
 我想做一个帮助小型健身房管理私教预约的产品，主要用户是店长和教练。
 MVP 需要创建课程、会员预约、取消预约和查看当天课表。
+
+根据确认的需求生成 PRD，并保存到 docs/prd/gym-booking.md。
 ```
 
-如果产品目标、核心用户、场景或 MVP 边界不完整，Agent 会一次集中询问最多 5 个关键问题，并在得到答案前停止生成正式 PRD。
+如果产品目标、用户、核心场景或 MVP 边界不完整，Agent 会集中提出最多 5 个关键问题，
+并在得到答案前停止生成正式 PRD。只要求 Review 时不会修改文件；明确修订时会先读取
+完整文档并原地更新。具体制品说明见
+[`presets/prd-agent/README.md`](presets/prd-agent/README.md)。
 
-### 生成并保存
+## 项目结构
 
 ```text
-根据刚才确认的需求生成 PRD，并保存到 docs/prd/gym-booking.md。
+presets/                 Agent Preset 及其私有 Skill
+skills/                  可供多个 Preset 复用的 Skill
+plugins/                 Tool、Provider 和 Service 插件
+workflows/               多步骤或多 Agent 编排
+bundles/                 面向场景的安装组合
+packages/
+├── catalog/             读取和校验统一制品目录
+├── installer/           安全、幂等的制品安装核心
+└── validator/           按制品类型执行结构验证
+scripts/                 CLI 入口和 DSH 冒烟检查
+tests/                   契约与集成测试
+docs/                    架构和制品编写规范
+dsh-kit.json             唯一制品清单及 DSH 兼容基线
 ```
 
-没有指定路径时，Agent 使用 `docs/prd/<产品名-slug>.md`。默认仅在对话中输出；“保存、写入、落盘、更新文件”等明确指令才会触发文件操作。
+架构边界和新增制品规则见 [`docs/architecture.md`](docs/architecture.md)。
 
-### Review 已有 PRD
+## 新增制品
 
-```text
-Review docs/prd/gym-booking.md，重点检查业务规则、异常场景和验收标准。
-```
+1. 将实现放入对应的顶层目录。
+2. 在 `dsh-kit.json` 中登记唯一 ID、类型、版本和源码路径。
+3. 为制品补充 README 和相关测试。
+4. 运行 `npm test`。
 
-仅要求 Review 时，Agent 输出问题报告，不改原文件。
-
-### 根据反馈修订
-
-```text
-更新 docs/prd/gym-booking.md：取消预约必须在课程开始前 4 小时完成；
-不足 4 小时时禁止取消，并提示联系门店。其他内容保持不变。
-```
-
-Agent 会先读取完整文件，保留未受影响的稳定 ID，更新相关功能、规则、异常和验收标准，原地写回并在聊天中总结变更。不会创建 v2/v3 副本，也不会在正文中累计变更日志。
-
-## PRD 输出结构
-
-默认模板包含：
-
-1. 文档信息
-2. 背景与目标
-3. 用户与核心场景
-4. MVP 范围
-5. 核心流程
-6. 功能模块与子功能（`FR-nnn`）
-7. 业务规则（`BR-nnn`）
-8. 异常场景（`EX-nnn`）
-9. Given/When/Then 验收标准（`AC-nnn`）
-10. 非功能要求
-11. 待确认事项
-12. Agent 建议（非已确认需求）
-
-正式需求只接受用户明确陈述或确认过的事实。价格、权限、审批、状态流转、数据归属、通知条件、失败补偿和关键阈值不会被擅自补充。
-
-## 能力边界
-
-| 能力 | DSH 内置模块 | 用途 |
-| --- | --- | --- |
-| Persona | `@deepseek-ai/dsh-persona` | 固定 PRD Agent 职责和文件策略 |
-| Skill 发现 | `@deepseek-ai/dsh-skill-filesystem` | 仅发现预设内的两个 Skill |
-| Skill 加载 | `@deepseek-ai/dsh-tool-skill` | 按需加载完整 Skill 指令 |
-| 用户澄清 | `@deepseek-ai/dsh-tool-ask-user` | 收集关键产品决策 |
-| 文件操作 | `@deepseek-ai/dsh-tool-fs` | 在 DSH 工作区沙箱内读取、创建和编辑 PRD |
-
-预设没有 Shell、Web、Goal、Todo、Workflow 或 Subagent 模块。文件操作继续受 DSH Web Profile 的工作区沙箱、读取前修改策略和用户批准机制约束。
+Preset 私有 Skill 放在 `presets/<id>/skills/`；真正跨 Agent 复用的 Skill 才放在根
+`skills/`。跨会话服务、Provider、凭据和存储属于 Host Plane，应通过 Plugin/Bundle
+提供，不能塞进会话级 Preset。
 
 ## 验证和测试
 
@@ -135,43 +101,10 @@ Agent 会先读取完整文件，保留未受影响的稳定 ID，更新相关�
 npm test
 ```
 
-测试覆盖：
+测试覆盖制品清单、Preset/Skill 结构、安装 dry-run、首次安装、幂等重装、冲突拒绝、
+`--force` 备份替换和临时 DSH Web Profile 配置冒烟检查。真实模型的交互行为仍需在
+Web UI 中验证。
 
-- 预设 YAML 行和模块白名单
-- 恰好两个可发现 Skill、frontmatter 和引用资源
-- 安装 dry-run、首次安装、幂等重装和冲突拒绝
-- `--force` 备份与替换
-- 自定义 `DSH_HOME`
-- 本机存在 `dsh` 时的临时 Web Profile 配置冒烟检查；未安装时明确跳过
+## License
 
-真实模型行为需要在 Web UI 中检查，因为用户问题是交互式调用。设置模型凭据后，至少验证以下场景：
-
-1. 输入“做一个预约产品”时只提出澄清问题，不输出正式 PRD。
-2. 回答目标用户、问题、核心场景和 MVP 范围后，生成带关联 ID 的完整 PRD。
-3. 未确认的非关键内容只出现在“待确认事项”，Agent 建议不进入正式范围。
-4. 仅要求 Review 时不修改文件。
-5. 含糊或冲突的修改要求不会覆盖原文件。
-6. 明确的修改要求原地更新，并返回路径、变更摘要和剩余待确认项。
-
-## 项目结构
-
-```text
-prd-agent/
-├── agent.cordis.yml
-├── preset.yml
-└── skills/
-    ├── requirement-clarification/SKILL.md
-    └── prd-generator/
-        ├── SKILL.md
-        └── references/
-scripts/
-├── install.mjs
-├── smoke-dsh.mjs
-└── validate.mjs
-tests/
-└── install.test.mjs
-```
-
-## 恢复备份
-
-安装器会在更新输出中打印备份的绝对路径。停止 DSH Web 后，把当前 `prd-agent` 目录移到其他位置，再将目标备份目录重命名回 `prd-agent`；重新启动或新建会话后生效。
+MIT

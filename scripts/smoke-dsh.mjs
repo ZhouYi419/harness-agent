@@ -5,7 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { installPreset } from './install.mjs'
+import { installArtifact } from '../packages/installer/index.mjs'
 
 const probe = spawnSync('dsh', ['--help'], { encoding: 'utf8' })
 if (probe.error?.code === 'ENOENT') {
@@ -16,7 +16,7 @@ if (probe.error) throw probe.error
 
 const dshHome = await mkdtemp(join(tmpdir(), 'dsh-prd-agent-smoke-'))
 try {
-  const installed = await installPreset({ dshHome })
+  const installed = await installArtifact({ artifactId: 'prd-agent', dshHome })
   const result = spawnSync('dsh', ['--profile', 'web', '--dump-config'], {
     encoding: 'utf8',
     env: { ...process.env, DSH_HOME: dshHome },

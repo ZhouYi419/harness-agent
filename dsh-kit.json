@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "compatibility": { "dsh": "2026-08" },
+  "defaultArtifact": "prd-agent",
+  "artifacts": [
+    {
+      "id": "prd-agent",
+      "type": "preset",
+      "version": "0.1.0",
+      "source": "presets/prd-agent",
+      "installName": "prd-agent",
+      "validation": {
+        "allowedModules": [
+          "@deepseek-ai/dsh-persona",
+          "@deepseek-ai/dsh-skill-filesystem",
+          "@deepseek-ai/dsh-tool-skill",
+          "@deepseek-ai/dsh-tool-ask-user",
+          "@deepseek-ai/dsh-tool-fs"
+        ]
+      }
+    }
+  ]
+}
