@@ -77,6 +77,10 @@ async function validatePreset(artifact, root, errors) {
   if (ids.length === 0) errors.push(`${artifact.source}/agent.cordis.yml: no plugin rows found`)
   if (new Set(ids).size !== ids.length) errors.push(`${artifact.source}/agent.cordis.yml: row ids must be unique`)
   const modules = [...config.matchAll(/^\s+name:\s+['"]?([^'"\s]+)['"]?\s*$/gm)].map(match => match[1])
+  for (const module of modules.filter(value => value.startsWith('./'))) {
+    const modulePath = resolve(dirname(configPath), module)
+    if (!await isFile(modulePath)) errors.push(`${artifact.source}/agent.cordis.yml: local module is missing: ${module}`)
+  }
   const allowlist = artifact.validation?.allowedModules
   if (allowlist) {
     const unexpected = modules.filter(module => !allowlist.includes(module))

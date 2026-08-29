@@ -3,8 +3,9 @@
 面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的可扩展制品仓库，
 统一管理 Agent Preset、Skill、Plugin、Workflow 和 Bundle。
 
-当前可用制品是 **PRD Agent 0.1.0**：把自然语言产品想法转成精简 MVP PRD，支持
-需求澄清、PRD Review、根据反馈修订，以及在用户明确要求时创建或更新 Markdown 文件。
+当前可用制品是 **PRD Agent 0.2.0**：把自然语言产品想法转成结构化 MVP PRD JSON，
+支持需求澄清、局部/模块/功能级更新、PRD Review、完整性检查，以及在用户明确要求时
+创建或更新 JSON 文件。
 
 ## 运行要求
 
@@ -48,7 +49,7 @@ npx @deepseek-ai/dsh web
 ```
 
 新建空白会话并选择 **PRD Agent**。启动 DSH 时所在目录就是 Agent 工作区，默认文档路径
-`docs/prd/<产品名-slug>.md` 相对于该目录解析。
+`docs/prd/<产品名-slug>.json` 相对于该目录解析。
 
 生成并保存示例：
 
@@ -56,7 +57,7 @@ npx @deepseek-ai/dsh web
 我想做一个帮助小型健身房管理私教预约的产品，主要用户是店长和教练。
 MVP 需要创建课程、会员预约、取消预约和查看当天课表。
 
-根据确认的需求生成 PRD，并保存到 docs/prd/gym-booking.md。
+根据确认的需求生成结构化 PRD，并保存到 docs/prd/gym-booking.json。
 ```
 
 如果产品目标、用户、核心场景或 MVP 边界不完整，Agent 会集中提出最多 5 个关键问题，

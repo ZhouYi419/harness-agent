@@ -6,7 +6,7 @@
     {
       "id": "prd-agent",
       "type": "preset",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "presets/prd-agent",
       "installName": "prd-agent",
       "validation": {
@@ -14,6 +14,7 @@
           "@deepseek-ai/dsh-persona",
           "@deepseek-ai/dsh-skill-filesystem",
           "@deepseek-ai/dsh-tool-skill",
+          "./tools/prd-tools.mjs",
           "@deepseek-ai/dsh-tool-ask-user",
           "@deepseek-ai/dsh-tool-fs"
         ]

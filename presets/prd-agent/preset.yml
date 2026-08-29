@@ -1,2 +1,2 @@
 name: PRD Agent
-description: 面向 MVP 的 PRD 生成、评审与修订 Agent，支持需求澄清和 Markdown 文件更新。
+description: 面向 MVP 的结构化 PRD 生成、局部更新、评审与完整性检查 Agent。
