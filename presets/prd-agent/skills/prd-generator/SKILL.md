@@ -5,7 +5,27 @@ description: 在需求澄清通过后编排结构化 PRD 的创建、局部更�
 
 # PRD 创建、Review 与修订
 
-仅在 `requirement-clarification` 已完成且允许继续后使用本 Skill。随后必须加载 `prd-structure`；涉及任何 Feature 时同时加载 `feature-specification`。
+仅在 Requirement Context v0.3 门禁通过后使用本 Skill。随后必须加载 `prd-structure`；涉及任何 Feature 时同时加载 `feature-specification`。
+
+## Requirement Context 门禁
+
+创建 PRD 前必须具有 Requirement Context v0.3。
+
+只有同时满足以下条件才可以调用 `create_prd`：
+
+- `confirmedRequirements` 包含产品目标、主要用户、核心场景和 MVP 范围。
+- 不存在 critical 或 high 的 `missingRequirements`。
+- 不存在 blocking 的 `ambiguousRequirements`。
+- `conflictingRequirements` 为空。
+- 不存在 `required: true` 的 `pendingQuestions`。
+
+创建 `user_supplement` 时：
+
+- 正式需求只来自 `confirmedRequirements`。
+- `suggestions` 不得进入正式 Feature 或 Scope。
+- `assumptions` 只能进入 Open Questions 或显式假设说明。
+- 未解决的非阻塞问题进入 `openQuestions`。
+- `answerHistory` 只用于追溯，不直接写入 PRD。
 
 ## 选择模式
 
@@ -13,7 +33,7 @@ description: 在需求澄清通过后编排结构化 PRD 的创建、局部更�
 - **Review**：将完整 PRD 传给 `review_prd`。默认只输出结构化 Review 结果，不修改 PRD。
 - **修订**：读取完整当前 PRD，把修改要求映射为最小 JSON Pointer 操作后调用 `update_prd`。模块级和功能级修改同样使用该工具。
 
-Review 或修订时，按需读取 [Review 与修订](references/review-and-revision.md)；需要改善措辞时读取 [写作规则](references/writing-rules.md)。旧 Markdown 模板只在用户明确要求 Markdown 展示时读取，不是 v0.2 的事实源。
+Review 或修订时，按需读取 [Review 与修订](references/review-and-revision.md)；需要改善措辞时读取 [写作规则](references/writing-rules.md)。旧 Markdown 模板只在用户明确要求 Markdown 展示时读取，不是 v0.3 的事实源。
 
 ## 输出约定
 

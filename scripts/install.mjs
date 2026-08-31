@@ -5,6 +5,8 @@ import { pathToFileURL } from 'node:url'
 
 import { defaultDshHome, installArtifact } from '../packages/installer/index.mjs'
 
+// 这是面向人的 CLI 薄层：只负责参数、文本输出和退出码，所有文件操作
+// 都委托给 packages/installer，确保 CLI 与自动化测试走同一条路径。
 function usage() {
   return `Usage: node scripts/install.mjs [artifact-id] [options]
 
@@ -17,6 +19,7 @@ Options:
 }
 
 export function parseArgs(argv) {
+  // 手工解析少量稳定参数，避免为了四个选项引入额外 CLI 依赖。
   const options = { artifactId: undefined, dshHome: undefined, dryRun: false, force: false, help: false }
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index]
@@ -40,6 +43,7 @@ export function parseArgs(argv) {
 }
 
 function renderResult(result) {
+  // installer 返回机器可读结果；这里再翻译成人类可读提示。
   if (result.action === 'unchanged') return `${result.artifactId} is already up to date: ${result.target}`
   if (result.dryRun) {
     const backup = result.backup ? `; existing content would be backed up to ${result.backup}` : ''
@@ -64,6 +68,7 @@ async function main() {
   process.stdout.write(`${renderResult(result)}\n`)
 }
 
+// 被测试 import 时不自动执行；只有 `node scripts/install.mjs` 才进入 main。
 const isMain = process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 if (isMain) {
   main().catch((error) => {

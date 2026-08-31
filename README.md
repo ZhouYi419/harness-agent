@@ -3,9 +3,9 @@
 面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的可扩展制品仓库，
 统一管理 Agent Preset、Skill、Plugin、Workflow 和 Bundle。
 
-当前可用制品是 **PRD Agent 0.2.0**：把自然语言产品想法转成结构化 MVP PRD JSON，
-支持需求澄清、局部/模块/功能级更新、PRD Review、完整性检查，以及在用户明确要求时
-创建或更新 JSON 文件。
+当前可用制品是 **PRD Agent 0.3.0**：先把自然语言产品想法分析为 Requirement
+Context，识别缺失、模糊和冲突需求，通过 Harness 用户问答能力完成结构化澄清，再生成
+PRD JSON。它同时支持局部/模块/功能级更新、PRD Review 和完整性检查。
 
 ## 运行要求
 

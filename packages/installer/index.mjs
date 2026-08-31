@@ -5,6 +5,8 @@ import { join, resolve } from 'node:path'
 
 import { findArtifact, loadCatalog } from '../catalog/index.mjs'
 
+// DSH_HOME 决定 DSH 的用户级数据目录。显式参数优先，其次读取环境变量，
+// 最后回退到 ~/.dsh，便于 CLI、测试和真实 DSH 使用同一套安装逻辑。
 export function defaultDshHome(environment = process.env) {
   return resolve(environment.DSH_HOME || join(homedir(), '.dsh'))
 }
@@ -16,6 +18,8 @@ async function lstatOrUndefined(path) {
   }
 }
 
+// 以稳定顺序枚举目录树。除了比较安装内容，这一步也拒绝符号链接，
+// 避免安装源通过链接跳到仓库或 DSH_HOME 之外。
 async function listTree(root, relativePath = '') {
   const current = relativePath === '' ? root : join(root, relativePath)
   const entries = await readdir(current, { withFileTypes: true })
@@ -36,6 +40,7 @@ export async function treesEqual(leftRoot, rightRoot) {
   const leftStat = await lstatOrUndefined(leftRoot)
   const rightStat = await lstatOrUndefined(rightRoot)
   if (!leftStat?.isDirectory() || !rightStat?.isDirectory()) return false
+  // 先比较目录结构，再逐个比较文件字节；内容完全相同才视为幂等重装。
   const [leftEntries, rightEntries] = await Promise.all([listTree(leftRoot), listTree(rightRoot)])
   if (JSON.stringify(leftEntries) !== JSON.stringify(rightEntries)) return false
   for (const entry of leftEntries) {
@@ -60,6 +65,8 @@ async function unusedBackupPath(parent, installName, date) {
   return candidate
 }
 
+// 目前只有 preset 的 DSH 落盘位置已经确定：
+// <DSH_HOME>/.agent-presets/<installName>。
 function installCoordinates(artifact, dshHome) {
   if (artifact.type !== 'preset') throw new Error(`installation is not implemented for artifact type: ${artifact.type}`)
   return { installName: artifact.installName ?? artifact.id, parent: join(resolve(dshHome), '.agent-presets') }
@@ -69,6 +76,8 @@ export async function installArtifact({
   artifactId, dshHome = defaultDshHome(), dryRun = false, force = false,
   sourceDir, now = new Date(), catalog: providedCatalog,
 } = {}) {
+  // 1. 从唯一制品清单定位源目录。测试可以注入 catalog/sourceDir，
+  //    但正常 CLI 路径始终使用仓库根目录的 dsh-kit.json。
   const catalog = providedCatalog ?? await loadCatalog()
   const id = artifactId ?? catalog.defaultArtifact
   if (!id) throw new Error('artifact id is required')
@@ -78,6 +87,7 @@ export async function installArtifact({
   if (!sourceStat?.isDirectory()) throw new Error(`artifact source not found: ${source}`)
   await listTree(source)
 
+  // 2. 计算 DSH 目标目录，并区分首次安装、相同重装和冲突安装。
   const { parent, installName } = installCoordinates(artifact, dshHome)
   const target = join(parent, installName)
   const targetStat = await lstatOrUndefined(target)
@@ -90,8 +100,10 @@ export async function installArtifact({
   }
   const action = targetStat ? 'replaced' : 'installed'
   const backup = targetStat ? await unusedBackupPath(parent, installName, now) : undefined
+  // dry-run 只返回将要发生的动作，不创建目录、不备份、不复制。
   if (dryRun) return { artifactId: id, action, target, backup, dryRun: true }
 
+  // 3. 先复制到同级临时目录，再通过 rename 原子发布，避免 DSH 读到半成品。
   await mkdir(parent, { recursive: true })
   const stage = join(parent, `.${installName}.stage-${process.pid}-${randomUUID()}`)
   try {
@@ -100,6 +112,7 @@ export async function installArtifact({
       await rename(stage, target)
       return { artifactId: id, action, target, backup: undefined, dryRun: false }
     }
+    // --force 更新先把旧版本改名为可恢复备份；新版本发布失败时回滚旧目录。
     await rename(target, backup)
     try { await rename(stage, target) } catch (error) {
       await rename(backup, target)
@@ -111,5 +124,5 @@ export async function installArtifact({
   }
 }
 
-// Backward-compatible name for existing consumers while the repository migrates.
+// 兼容旧调用方的历史名称；新代码统一使用 installArtifact。
 export const installPreset = installArtifact

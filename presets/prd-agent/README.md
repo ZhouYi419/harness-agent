@@ -1,9 +1,13 @@
 # PRD Agent
 
-面向 MVP 的结构化 PRD 生成、评审和局部修订 Preset。v0.2 包含四个私有 Skill，
-并新增 `create_prd`、`update_prd`、`review_prd` 三个确定性 JSON 工具。
+面向 MVP 的需求分析、结构化澄清、PRD 生成、评审和局部修订 Preset。v0.3 包含
+Requirement Context 工作流，并通过 Harness 用户问答能力主动解决缺失、模糊和冲突需求。
 
-PRD v0.2 统一包含 Product Overview、Goals、Users、Scenarios、Modules、Features、
+需求澄清依次使用 `analyze_requirement`、`ask_requirement_questions` 和
+`apply_requirement_answers`；阻塞问题解决后，再使用 `create_prd`、`update_prd` 和
+`review_prd` 处理 PRD JSON。
+
+PRD 统一包含 Product Overview、Goals、Users、Scenarios、Modules、Features、
 Business Rules、Flows、Exceptions、Acceptance Criteria、Open Questions 和 Scope。
 每个 Feature 必须包含名称、目标、角色、前置条件、用户操作、系统行为、输入、输出、
 业务规则、异常场景和验收标准。

@@ -3,6 +3,8 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 
 import { loadCatalog, PROJECT_ROOT } from '../catalog/index.mjs'
 
+// validator 只做静态结构检查，不启动 DSH，也不调用模型。
+// 它负责尽早发现无法安装或无法被 DSH 组装的制品。
 async function isFile(path) {
   try { return (await stat(path)).isFile() } catch (error) {
     if (error?.code === 'ENOENT') return false
@@ -18,6 +20,8 @@ async function isDirectory(path) {
 }
 
 function parseFrontmatter(content, path, errors) {
+  // 当前只需要 Skill frontmatter 的一层键值（name/description），
+  // 因此使用小型解析器即可，不引入完整 YAML 依赖。
   const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---(?:\n|$)/)
   if (match === null) {
     errors.push(`${path}: missing YAML frontmatter`)
@@ -45,6 +49,7 @@ async function validateSkillDirectory(skillRoot, root, errors) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(frontmatter.name ?? '')) errors.push(`${displayPath}: name must be kebab-case`)
   if ((frontmatter.description ?? '').length < 20) errors.push(`${displayPath}: description is missing or too vague`)
 
+  // SKILL.md 中显式链接的 references/*.md 必须存在且不能逃出该 Skill 目录。
   const references = [...content.replace(/\r\n/g, '\n').matchAll(/\]\((references\/[^)#]+\.md)\)/g)].map(match => match[1])
   for (const reference of references) {
     const resolved = resolve(dirname(skillFile), reference)
@@ -73,14 +78,17 @@ async function validatePreset(artifact, root, errors) {
   if (!await isFile(configPath) || !await isFile(metadataPath)) return
 
   const config = await readFile(configPath, 'utf8')
+  // 每个 Cordis 行的 id 必须唯一，否则 DSH 组装时无法稳定标识插件实例。
   const ids = [...config.matchAll(/^- id:\s+([a-z0-9-]+)\s*$/gm)].map(match => match[1])
   if (ids.length === 0) errors.push(`${artifact.source}/agent.cordis.yml: no plugin rows found`)
   if (new Set(ids).size !== ids.length) errors.push(`${artifact.source}/agent.cordis.yml: row ids must be unique`)
+  // name 既可能是官方 npm 模块，也可能是随 Preset 发布的 ./tools/*.mjs。
   const modules = [...config.matchAll(/^\s+name:\s+['"]?([^'"\s]+)['"]?\s*$/gm)].map(match => match[1])
   for (const module of modules.filter(value => value.startsWith('./'))) {
     const modulePath = resolve(dirname(configPath), module)
     if (!await isFile(modulePath)) errors.push(`${artifact.source}/agent.cordis.yml: local module is missing: ${module}`)
   }
+  // allowlist 同时防止漏装必需插件和意外扩大 Agent 的工具权限面。
   const allowlist = artifact.validation?.allowedModules
   if (allowlist) {
     const unexpected = modules.filter(module => !allowlist.includes(module))
@@ -100,6 +108,7 @@ export async function validateProject({ root = PROJECT_ROOT } = {}) {
   try { catalog = await loadCatalog(join(root, 'dsh-kit.json')) } catch (error) {
     return { errors: [error instanceof Error ? error.message : String(error)], catalog: undefined }
   }
+  // 按制品类型分派校验；当前仓库实现了 preset 的完整结构检查。
   for (const artifact of catalog.artifacts) {
     if (!await isDirectory(artifact.sourcePath)) {
       errors.push(`${artifact.source}: artifact source directory is missing`)
